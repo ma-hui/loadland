@@ -54,6 +54,20 @@
                 struct  block_node * hd_block;       /**指向楼栋链的指针*/
                 };
 
+        struct block_sta{
+            char block_id [NUM];
+            int  num ;
+            struct block_sta * nx_block_sta;
+
+        };
+
+        struct land_sta{
+            char land_id  [NUM];
+            char land_name [NUM];
+            int  num;
+            struct land_sta * nx_land_sta;
+            struct block_sta * hd_block_sta;
+        };
 
 /**
  *屏幕窗口信息链结点结点结构
@@ -222,8 +236,8 @@ struct land_node * SeekLandnode(struct land_node * hd, char * l_id);/*查询符合条
 struct block_node * SeekBlocknode(struct land_node * hd, char * l_id, char * b_id);/* 查询符合条件的楼栋*/
 struct room_node * SeekRoomnode(struct land_node * hd, char * l_id, char * b_id,char * r_id);/*查询符合条件的房屋 */
 
-struct room_node * StTypenode(struct land_node *hd, char * type);/**寻找符合条件的房屋类型*/
-struct land_node * StAreanode(struct land_node *hd , char * area);///寻找指定城区的楼盘信息
+struct land_sta * StTypenode(struct land_node *hd, char * type);/*统计符合条件的房屋类型*/
+struct land_node * StAreanode(struct land_node *hd , char * area);/*统计指定城区的楼盘信息*/
 
 BOOL SeekLandArea(struct land_node *hd , char * area, int n ); //寻找符合地区条件的楼盘信息
 //查询符合房型的房屋信息

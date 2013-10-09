@@ -3703,10 +3703,13 @@ BOOL Stat_t_Info(void)        /*按房屋的户型统计    */
         lp.bVisible = FALSE;
         SetConsoleCursorInfo(gh_std_out,plp);
         PopOff();
-        /**按照房屋类型查找函数*/
-        struct room_node *p = NULL;
-        struct room_node * r_p = StTypenode(hd_land,type);
-        p = r_p;
+        /**按照房屋类型统计函数*/
+
+        struct land_sta * r_p = StTypenode(hd_land,type);
+        struct land_sta * r_p_f = r_p;
+        struct block_sta * p =NULL;
+        struct block_sta * p_f;
+
         int n = 0;
 
         if(r_p!=NULL)
@@ -3714,27 +3717,34 @@ BOOL Stat_t_Info(void)        /*按房屋的户型统计    */
             SetConsoleCursorPosition(gh_std_out,(COORD){1, 1});
             lp.bVisible = TRUE;
             SetConsoleCursorInfo(gh_std_out,plp);
-            printf("          %s  型的房屋 的 基本情况如下：\n",type);
+            printf(" *  %s  *型的房屋的统计的信息 情况如下：\n",type);
 
 
             while(r_p) {
-                if(n == 0 ){
-                    printf("\n楼盘编号   楼栋编号     房间编号     房间面积      面积价格 ");
+                printf("\n 楼盘 %s: %d 间 \n",r_p->land_id,r_p->num);
+                p = r_p -> hd_block_sta;
+                if(p){
+                    printf("各楼栋各有\n");
+                    printf("楼栋号--房间数\t楼栋号--房间数\t楼栋数--房间数\t楼栋号--房间数\t楼栋号--房间数\n");
                 }
-                    printf("\n%s\t%s\t\t%s\t\t%s\t\t%s",r_p->land_id,r_p->block_id,r_p->room_id,r_p->area,r_p->price);
-                    n++;
-                if( n == 15){
-                    printf("\n按任意键查看下一页的信息\n");
-                    getch();
-                    n = 0;
-                    ClearScreen();
+
+                while(p){
+                printf("  %s栋  %d间\t",p->block_id,p->num);
+                p = p -> nx_block_sta;
                 }
-                r_p =  r_p -> next_room;
+                r_p = r_p->nx_land_sta;
+
             }
-            while(p){
-            r_p = p;
-            p = p ->next_room;
-            free(r_p);
+            while(r_p_f){
+                p_f = r_p_f -> hd_block_sta;
+                while(p_f){
+                 p = p_f->nx_block_sta;
+                 free(p_f);
+                 p_f = p;
+                }
+                r_p = r_p_f->nx_land_sta;
+                free(r_p_f);
+                r_p_f = r_p;
             }
 
             lp.bVisible = FALSE;
@@ -3752,21 +3762,36 @@ BOOL Stat_t_Info(void)        /*按房屋的户型统计    */
     return bRet;
 }
 
-/**寻找符合户型条件的房屋类型*/
-struct room_node * StTypenode(struct land_node *hd, char * type){
-
+/**统计符合户型条件的房屋类型*/
+struct land_sta * StTypenode(struct land_node *hd, char * type){
+    struct land_sta  * p_re = NULL, * p_r_sta = NULL;
+    struct block_sta * p_b_sta1, *p_b_sta;
     struct block_node * p_block;
-    struct room_node  * p_room = NULL,*p_new = NULL, *p_new_n = NULL;
+    struct room_node  * p_room = NULL,  *p_new = NULL,  *p_new_n = NULL;
     while (hd){
+        p_r_sta = (struct land_sta *)malloc(sizeof(struct land_sta));
+        p_r_sta -> nx_land_sta = p_re;
+        p_re = p_r_sta;
+
+        p_r_sta -> num = 0;
+        p_r_sta -> hd_block_sta = NULL;
+        strcpy(p_r_sta -> land_id,hd->land_id);
+        strcpy(p_r_sta ->land_name,hd->land_name);
+
         p_block = hd -> hd_block;
         while(p_block){
+            p_b_sta1 = (struct block_sta *)malloc(sizeof(struct block_sta));
+            p_b_sta1->nx_block_sta = p_r_sta -> hd_block_sta;
+            p_r_sta->hd_block_sta = p_b_sta1;
+
+            p_b_sta1->num = 0;
+            strcpy(p_b_sta1->block_id ,p_block->block_id);
+
             p_room = p_block ->hd_room;
             while(p_room){
                 if(strcmp(type,p_room ->type)==0){
-                      p_new_n =(struct room_node *)malloc(sizeof(struct room_node));
-                      * p_new_n = * p_room;
-                      p_new_n ->next_room =  p_new;
-                      p_new = p_new_n;
+                     p_b_sta1->num ++;
+                     p_r_sta ->num ++;
                 }
                 p_room = p_room ->next_room;
             }
@@ -3774,12 +3799,8 @@ struct room_node * StTypenode(struct land_node *hd, char * type){
         }
         hd = hd ->next_land;
     }
-    if(p_new){
 
-        return p_new;
-    }
-    else
-        return NULL;
+        return p_re;
 }
 
 int DealConInput(HOT_AREA *pHotArea, int *piHot)
